@@ -36,6 +36,15 @@ def call_gemini_with_retry(api_call, max_retries: int = 3, base_delay: float = 1
             if "api key" in error_str or "permission" in error_str or "unauthorized" in error_str:
                 raise RuntimeError(f"Gemini API authentication failed: {e}") from e
 
+            # Don't waste short retries on quota exhaustion -- the server
+            # tells us to wait much longer (e.g. 59s) than our backoff
+            # (max 4s), so retrying immediately will just fail again.
+            if "resource_exhausted" in error_str or "quota" in error_str:
+                raise RuntimeError(
+                    f"Gemini API quota exceeded. Please wait a minute and try again, "
+                    f"or check your plan at https://ai.google.dev/gemini-api/docs/rate-limits. Details: {e}"
+                ) from e
+
             if attempt < max_retries:
                 delay = base_delay * (2 ** (attempt - 1))  # 1s, 2s, 4s...
                 print(f"Gemini call failed (attempt {attempt}/{max_retries}): {e}. Retrying in {delay}s...")

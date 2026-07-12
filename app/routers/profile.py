@@ -68,3 +68,38 @@ def get_my_profile(
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not created yet")
     return profile
+    
+@router.patch("/me", response_model=schemas.StudentProfileOut)
+def update_my_profile(
+    profile_update: schemas.StudentProfileUpdate,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = db.query(models.StudentProfile).filter(
+        models.StudentProfile.user_id == current_user.id
+    ).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not created yet")
+
+    # Merge provided fields with existing values -- only overwrite what
+    # the client actually sent (exclude_unset=True skips absent fields)
+    update_data = profile_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(profile, field, value)
+
+    # Re-validate and re-derive subjects using the MERGED state --
+    # necessary because level or group may have just changed above.
+    if not validate_grade(profile.level, profile.grade):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Grade {profile.grade} is not valid for level {profile.level}",
+        )
+
+    try:
+        profile.subjects = get_subjects(profile.level, profile.group)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    db.commit()
+    db.refresh(profile)
+    return profile

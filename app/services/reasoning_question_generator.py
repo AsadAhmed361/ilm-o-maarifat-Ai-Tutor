@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from google import genai
 from google.genai import types
 from app.services.gemini_utils import call_gemini_with_retry
-
+from app.gemini_client import MODEL_NAME
 
 class ReasoningQuestion(BaseModel):
     question: str = Field(description="An open-ended reasoning/short-answer question")
@@ -21,7 +21,7 @@ class ReasoningQuestionSet(BaseModel):
 
 
 class ReasoningQuestionGenerator:
-    def __init__(self, client: genai.Client, model: str = "gemini-2.5-flash"):
+    def __init__(self, client: genai.Client, model: str = MODEL_NAME):
         self.client = client
         self.model = model
 

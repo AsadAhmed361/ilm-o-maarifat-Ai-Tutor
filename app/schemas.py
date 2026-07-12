@@ -92,6 +92,19 @@ class StudentProfileCreate(BaseModel):
     grade: int
     school_name: Optional[str] = None
 
+class StudentProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    phone_number: Optional[str] = None
+    level: Optional[Literal["SSC (Matric)", "HSSC (Intermediate)"]] = None
+    group: Optional[Literal[
+        "Science (Biology)",
+        "Science (Computer Science)",
+        "Pre-Medical",
+        "Pre-Engineering",
+        "ICS (Computer Science)",
+    ]] = None
+    grade: Optional[int] = None
+    school_name: Optional[str] = None
 
 class StudentProfileOut(BaseModel):
     id: int
@@ -105,3 +118,20 @@ class StudentProfileOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ChatStartRequest(BaseModel):
+    subject: str
+
+
+class ChatStartResponse(BaseModel):
+    chat_session_id: int
+    reply: str
+
+
+class ChatMessageRequest(BaseModel):
+    message: str
+
+
+class ChatMessageResponse(BaseModel):
+    reply: str

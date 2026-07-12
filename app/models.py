@@ -65,6 +65,30 @@ class TestQuestion(Base):
 
     session = relationship("TestSession", back_populates="questions")
 
+class ChatSession(Base):
+    __tablename__ = "chat_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    subject = Column(String, nullable=False)
+
+    # [{"role": "user"|"model", "text": str}, ...] -- only human-readable
+    # turns, not the tool-calling negotiation (resolved per-request).
+    messages = Column(JSON, nullable=False, default=list)
+
+    # The currently in-progress test, if any. We track this ourselves
+    # instead of relying on the model to remember the ID across turns --
+    # its plain-text memory of a number mentioned earlier is unreliable.
+    active_test_session_id = Column(Integer, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class PromptUsageLog(Base):
+    __tablename__ = "prompt_usage_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class StudentProfile(Base):
     __tablename__ = "student_profiles"
